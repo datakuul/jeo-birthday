@@ -1,0 +1,193 @@
+@import "tailwindcss";
+
+/*
+  Janet at 80 — editorial design system.
+  Warm ivory neutrals, soft gold accents, refined serif/sans pairing.
+  Light theme only (a luxury keepsake reads warm, not dark).
+*/
+
+:root {
+  /* Warm neutral foundation */
+  --background: oklch(0.985 0.012 85);   /* ivory / warm cream */
+  --surface: oklch(0.998 0.006 85);      /* near-white cards */
+  --surface-muted: oklch(0.965 0.015 80);
+  --foreground: oklch(0.255 0.018 55);   /* warm near-black brown */
+  --muted-foreground: oklch(0.5 0.02 60);
+  --border: oklch(0.9 0.015 75);
+  --ring: oklch(0.72 0.07 75);
+
+  /* Soft gold accent */
+  --gold: oklch(0.72 0.085 78);
+  --gold-strong: oklch(0.62 0.09 70);
+  --gold-soft: oklch(0.93 0.04 82);
+
+  /* Deep accent for footer / contrast sections */
+  --ink: oklch(0.26 0.02 55);
+  --ink-foreground: oklch(0.96 0.01 85);
+
+  --destructive: oklch(0.55 0.16 25);
+  --success: oklch(0.55 0.1 150);
+
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-gold: var(--gold);
+  --color-gold-strong: var(--gold-strong);
+  --color-gold-soft: var(--gold-soft);
+  --color-ink: var(--ink);
+  --color-ink-foreground: var(--ink-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+
+  --font-serif: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 6px);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "kern", "liga", "calt";
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  ::selection {
+    background: var(--color-gold-soft);
+    color: var(--color-foreground);
+  }
+}
+
+@layer components {
+  /* Editorial section padding */
+  .section {
+    padding-block: clamp(3.5rem, 8vw, 7rem);
+  }
+  .container-prose {
+    width: 100%;
+    max-width: 68rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+  .container-narrow {
+    width: 100%;
+    max-width: 44rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+
+  /* Small uppercase eyebrow label with gold tracking */
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-gold-strong);
+  }
+
+  /* Thin decorative gold divider */
+  .rule-gold {
+    height: 1px;
+    width: 4rem;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--color-gold),
+      transparent
+    );
+  }
+
+  /* Display serif headline */
+  .display {
+    font-family: var(--font-serif);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    font-weight: 400;
+  }
+
+  .link-underline {
+    background-image: linear-gradient(var(--color-gold), var(--color-gold));
+    background-size: 0% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size 0.3s ease;
+  }
+  .link-underline:hover {
+    background-size: 100% 1px;
+  }
+}
+
+/* Reading column for long-form story body */
+.prose-warm p {
+  margin-block: 0.9em;
+  line-height: 1.85;
+  color: var(--color-foreground);
+}
+.prose-warm p:first-child {
+  margin-top: 0;
+}
+
+/* Lightweight scroll-reveal (replaces an animation library on public pages) */
+.reveal {
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-lite="true"]) .reveal:not(.reveal-in) {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+.reveal-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Respect reduced motion globally */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Lite Mode — disables decorative motion & heavy visuals */
+html[data-lite="true"] .decorative,
+html[data-lite="true"] .motion-safe-only {
+  animation: none !important;
+  transition: none !important;
+}
+html[data-lite="true"] [data-lite-hide="true"] {
+  display: none !important;
+}

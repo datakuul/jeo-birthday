@@ -48,8 +48,8 @@ next-env.d.ts
 
 # claude
 .claude
-# others
-AGENTS.md
-CLAUDE.md
-docs/
-images/
+# others (anchored to repo root so they don't match public/images, etc.)
+/AGENTS.md
+/CLAUDE.md
+/docs/
+/images/

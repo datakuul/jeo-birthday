@@ -238,8 +238,7 @@ export default async function HomePage() {
                 <div>
                   <dt className="font-medium">{formatDate(eventDate)}</dt>
                   <dd className="text-sm text-muted-foreground">
-                    {formatDate(eventDate, { hour: "numeric", minute: "2-digit" })}{" "}
-                    (West Africa Time)
+                    12 noon (West Africa Time)
                   </dd>
                 </div>
               </div>

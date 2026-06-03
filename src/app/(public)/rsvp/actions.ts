@@ -2,232 +2,200 @@
 
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import {
-  rsvpLookupSchema,
-  rsvpSubmissionSchema,
-  fieldErrors,
-} from "@/lib/validation";
-import { normalizeCode, hashIp } from "@/lib/codes";
+import { openRsvpSchema, fieldErrors } from "@/lib/validation";
+import { generateInvitationCode, hashIp, normalizePhone } from "@/lib/codes";
 import { audit } from "@/lib/audit";
 import { sendRsvpConfirmation } from "@/lib/email";
-
-export type LookupResult =
-  | { ok: false; error: string }
-  | {
-      ok: true;
-      household: {
-        id: string;
-        name: string;
-        invitationCode: string;
-        maxPartySize: number;
-        primaryEmail: string | null;
-        primaryPhone: string | null;
-        guests: {
-          id: string;
-          firstName: string;
-          lastName: string;
-          relationship: string | null;
-          ageGroup: string;
-          rsvpStatus: string;
-          mealChoice: string | null;
-          allergies: string | null;
-          accessibility: string | null;
-          notes: string | null;
-        }[];
-      };
-    };
-
-/** Look up a household by invitation code, surname, email, or phone. */
-export async function lookupHousehold(
-  _prev: unknown,
-  formData: FormData,
-): Promise<LookupResult> {
-  const parsed = rsvpLookupSchema.safeParse({
-    invitationCode: formData.get("invitationCode") ?? "",
-    surname: formData.get("surname") ?? "",
-    email: formData.get("email") ?? "",
-    phone: formData.get("phone") ?? "",
-  });
-  if (!parsed.success) {
-    return { ok: false, error: Object.values(fieldErrors(parsed.error))[0] ?? "Invalid search" };
-  }
-  const { invitationCode, surname, email, phone } = parsed.data;
-
-  let household = null;
-
-  if (invitationCode) {
-    household = await prisma.household.findUnique({
-      where: { invitationCode: normalizeCode(invitationCode) },
-      include: { guests: { orderBy: { createdAt: "asc" } } },
-    });
-  }
-
-  if (!household && (email || phone || surname)) {
-    household = await prisma.household.findFirst({
-      where: {
-        OR: [
-          email ? { primaryEmail: { equals: email } } : {},
-          phone ? { primaryPhone: { contains: phone } } : {},
-          surname ? { guests: { some: { lastName: { equals: surname } } } } : {},
-          surname ? { name: { contains: surname } } : {},
-        ].filter((c) => Object.keys(c).length),
-      },
-      include: { guests: { orderBy: { createdAt: "asc" } } },
-    });
-  }
-
-  if (!household) {
-    return {
-      ok: false,
-      error:
-        "We couldn't find your invitation. Please check your details, or contact the host for help.",
-    };
-  }
-
-  return {
-    ok: true,
-    household: {
-      id: household.id,
-      name: household.name,
-      invitationCode: household.invitationCode,
-      maxPartySize: household.maxPartySize,
-      primaryEmail: household.primaryEmail,
-      primaryPhone: household.primaryPhone,
-      guests: household.guests.map((g) => ({
-        id: g.id,
-        firstName: g.firstName,
-        lastName: g.lastName,
-        relationship: g.relationship,
-        ageGroup: g.ageGroup,
-        rsvpStatus: g.rsvpStatus,
-        mealChoice: g.mealChoice,
-        allergies: g.allergies,
-        accessibility: g.accessibility,
-        notes: g.notes,
-      })),
-    },
-  };
-}
 
 export type SubmitResult =
   | { ok: false; errors?: Record<string, string>; error?: string }
   | { ok: true; summary: { attending: number; declined: number; total: number } };
 
-export async function submitRsvp(payload: unknown): Promise<SubmitResult> {
-  const parsed = rsvpSubmissionSchema.safeParse(payload);
+function splitName(full: string): { firstName: string; lastName: string } {
+  const parts = full.trim().split(/\s+/);
+  if (parts.length === 1) return { firstName: parts[0], lastName: "" };
+  return { firstName: parts.slice(0, -1).join(" "), lastName: parts[parts.length - 1] };
+}
+
+async function uniqueCode(): Promise<string> {
+  for (let i = 0; i < 20; i++) {
+    const code = generateInvitationCode();
+    const exists = await prisma.household.findUnique({ where: { invitationCode: code } });
+    if (!exists) return code;
+  }
+  return generateInvitationCode(`JN${Date.now() % 1000}`);
+}
+
+/**
+ * Open RSVP — the responder enters their own details and (optionally) the adult
+ * guests they are bringing. Creates (or, for the same email, updates) a
+ * Household + Guests + RsvpSubmission so the admin tools keep working as before.
+ */
+export async function submitOpenRsvp(payload: unknown): Promise<SubmitResult> {
+  const parsed = openRsvpSchema.safeParse(payload);
   if (!parsed.success) {
     return { ok: false, errors: fieldErrors(parsed.error) };
   }
-  const data = parsed.data;
+  const d = parsed.data;
 
-  // Verify the household + invitation code match (don't trust the client id alone).
-  const household = await prisma.household.findUnique({
-    where: { id: data.householdId },
-    include: { guests: true },
-  });
-  if (!household || household.invitationCode !== normalizeCode(data.invitationCode)) {
-    return { ok: false, error: "Your invitation could not be verified. Please look up your household again." };
+  // --- Spam protection (kept light so it never blocks real guests) ----------
+  // 1) Honeypot: bots fill the hidden "website" field. Silently accept.
+  if (d.website) {
+    return { ok: true, summary: { attending: 0, declined: 0, total: 0 } };
   }
-
-  // Only allow responding for guests that belong to this household.
-  const ownedIds = new Set(household.guests.map((g) => g.id));
-  const submissions = data.guests.filter((g) => ownedIds.has(g.guestId));
-  if (!submissions.length) {
-    return { ok: false, error: "No valid guests to respond for." };
+  // 2) Time-trap: humans take more than a couple of seconds to fill the form;
+  //    automated submissions fire near-instantly. Silently accept (don't tip off).
+  if (d.renderedAt && Date.now() - d.renderedAt < 2500) {
+    return { ok: true, summary: { attending: 0, declined: 0, total: 0 } };
   }
-
-  const wasResponded = await prisma.rsvpSubmission.findUnique({
-    where: { householdId: household.id },
-  });
-
-  // Respect maxPartySize for attendees.
-  const attendingCount = submissions.filter((s) => s.rsvpStatus === "ATTENDING").length;
-  if (attendingCount > household.maxPartySize) {
-    return {
-      ok: false,
-      error: `This invitation allows up to ${household.maxPartySize} attending guest${
-        household.maxPartySize === 1 ? "" : "s"
-      }. Please adjust your selection.`,
-    };
-  }
-
-  await prisma.$transaction(
-    submissions.map((g) =>
-      prisma.guest.update({
-        where: { id: g.guestId },
-        data: {
-          rsvpStatus: g.rsvpStatus,
-          mealChoice: g.rsvpStatus === "ATTENDING" ? g.mealChoice ?? "STANDARD" : null,
-          allergies: g.allergies ?? null,
-          accessibility: g.accessibility ?? null,
-          notes: g.notes ?? null,
-        },
-      }),
-    ),
-  );
-
-  const declinedCount = submissions.filter((s) => s.rsvpStatus === "DECLINED").length;
-  const overallStatus =
-    attendingCount > 0 && declinedCount > 0
-      ? "PARTIAL"
-      : attendingCount > 0
-        ? "ATTENDING"
-        : submissions.some((s) => s.rsvpStatus === "MAYBE")
-          ? "MAYBE"
-          : "DECLINED";
 
   const hdrs = await headers();
   const ip = hdrs.get("x-forwarded-for")?.split(",")[0] ?? hdrs.get("x-real-ip");
+  const ipHash = hashIp(ip);
+
+  // 3) Flood backstop — generous, because Nigerian mobile carriers share IPs
+  //    (CGNAT). Only stops a runaway bot, not a big family on one network.
+  try {
+    const recent = await prisma.rsvpSubmission.count({
+      where: { ipHash, submittedAt: { gt: new Date(Date.now() - 60 * 60 * 1000) } },
+    });
+    if (recent >= 30) {
+      return {
+        ok: false,
+        error: "We've received a lot of responses from your network. Please try again shortly, or contact the host.",
+      };
+    }
+  } catch {
+    /* never block a real RSVP on the rate-limit check */
+  }
+
+  const phone = normalizePhone(d.phone);
+  const attending = d.rsvpStatus === "ATTENDING";
+  // Only count/keep guests when the responder is actually attending.
+  const extraGuests = attending ? d.guests.filter((g) => g.name.trim()) : [];
+  const partySize = attending ? 1 + extraGuests.length : 0;
+
+  const me = splitName(d.fullName);
+  const primaryGuest = {
+    firstName: me.firstName,
+    lastName: me.lastName,
+    email: d.email ?? null,
+    phone: phone,
+    relationship: "Self",
+    ageGroup: "ADULT",
+    inviteStatus: "INVITED",
+    rsvpStatus: d.rsvpStatus,
+    mealChoice: attending ? d.mealChoice ?? "STANDARD" : null,
+    allergies: d.allergies ?? null,
+    accessibility: d.accessibility ?? null,
+  };
+  const guestRows = extraGuests.map((g) => {
+    const n = splitName(g.name);
+    return {
+      firstName: n.firstName,
+      lastName: n.lastName,
+      relationship: "Guest",
+      ageGroup: "ADULT",
+      inviteStatus: "INVITED",
+      rsvpStatus: "ATTENDING",
+      mealChoice: g.mealChoice ?? "STANDARD",
+    };
+  });
+
+  const overallStatus = d.rsvpStatus;
+
+  // If this phone already responded, update that household (lets guests edit by
+  // re-submitting with the same number) — otherwise create a fresh one. This
+  // also stops accidental/abusive duplicates from the same person.
+  const existing = await prisma.household.findFirst({
+    where: { primaryPhone: { equals: phone } },
+  });
+
+  let householdId: string;
+  if (existing) {
+    householdId = existing.id;
+    await prisma.guest.deleteMany({ where: { householdId } });
+    await prisma.household.update({
+      where: { id: householdId },
+      data: {
+        name: `${d.fullName}${extraGuests.length ? " & party" : ""}`,
+        primaryContactName: d.fullName,
+        primaryEmail: d.email ?? null,
+        primaryPhone: phone,
+        maxPartySize: Math.max(1, partySize),
+        guests: { create: [primaryGuest, ...guestRows] },
+      },
+    });
+  } else {
+    const created = await prisma.household.create({
+      data: {
+        name: `${d.fullName}${extraGuests.length ? " & party" : ""}`,
+        invitationCode: await uniqueCode(),
+        primaryContactName: d.fullName,
+        primaryEmail: d.email ?? null,
+        primaryPhone: phone,
+        maxPartySize: Math.max(1, partySize),
+        guests: { create: [primaryGuest, ...guestRows] },
+      },
+    });
+    householdId = created.id;
+  }
 
   await prisma.rsvpSubmission.upsert({
-    where: { householdId: household.id },
+    where: { householdId },
     update: {
       status: overallStatus,
-      partySize: attendingCount,
-      submittedByName: data.submittedByName,
-      submittedByEmail: data.submittedByEmail,
-      submittedByPhone: data.submittedByPhone ?? null,
-      message: data.message ?? null,
-      ipHash: hashIp(ip),
+      partySize,
+      submittedByName: d.fullName,
+      submittedByEmail: d.email ?? null,
+      submittedByPhone: phone,
+      message: d.message ?? null,
+      ipHash,
     },
     create: {
-      householdId: household.id,
+      householdId,
       status: overallStatus,
-      partySize: attendingCount,
-      submittedByName: data.submittedByName,
-      submittedByEmail: data.submittedByEmail,
-      submittedByPhone: data.submittedByPhone ?? null,
-      message: data.message ?? null,
-      ipHash: hashIp(ip),
+      partySize,
+      submittedByName: d.fullName,
+      submittedByEmail: d.email ?? null,
+      submittedByPhone: phone,
+      message: d.message ?? null,
+      ipHash,
     },
   });
 
   await audit({
-    action: wasResponded ? "UPDATE" : "CREATE",
+    action: existing ? "UPDATE" : "CREATE",
     entityType: "Rsvp",
-    entityId: household.id,
-    metadata: { attending: attendingCount, declined: declinedCount, by: data.submittedByName },
+    entityId: householdId,
+    metadata: { by: d.fullName, status: overallStatus, partySize },
   });
 
-  // Confirmation email (non-blocking on failure).
-  const guestLines = submissions.map((s) => {
-    const g = household.guests.find((x) => x.id === s.guestId)!;
-    return { name: `${g.firstName} ${g.lastName}`, status: s.rsvpStatus, meal: s.mealChoice };
-  });
-  await sendRsvpConfirmation({
-    to: data.submittedByEmail,
-    name: data.submittedByName,
-    isUpdate: !!wasResponded,
-    guests: guestLines,
-    message: data.message,
-  });
+  // Confirmation email — only if they gave one (email is optional). Never blocks.
+  if (d.email) {
+    const emailGuests = [
+      { name: d.fullName, status: d.rsvpStatus, meal: primaryGuest.mealChoice },
+      ...guestRows.map((g) => ({
+        name: `${g.firstName} ${g.lastName}`.trim(),
+        status: "ATTENDING",
+        meal: g.mealChoice,
+      })),
+    ];
+    await sendRsvpConfirmation({
+      to: d.email,
+      name: d.fullName,
+      isUpdate: !!existing,
+      guests: emailGuests,
+      message: d.message,
+    });
+  }
 
   return {
     ok: true,
     summary: {
-      attending: attendingCount,
-      declined: declinedCount,
-      total: submissions.length,
+      attending: partySize,
+      declined: attending ? 0 : 1,
+      total: attending ? partySize : 1,
     },
   };
 }

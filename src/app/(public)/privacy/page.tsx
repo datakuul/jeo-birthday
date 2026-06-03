@@ -18,7 +18,7 @@ const sections = [
   {
     h: "What we collect",
     p: [
-      "When you RSVP, we collect the names of guests in your party, your response (attending, declining or maybe), meal preferences, any allergies or accessibility needs you tell us about, an optional message, and the name, email and (optionally) phone number of the person responding.",
+      "When you RSVP, we collect your name and phone number (and an email address if you choose to give one), your response (attending, declining or maybe), meal preferences, any allergies or accessibility needs you tell us about, an optional message, and the names of any adult guests you are bringing.",
       "When you leave a tribute, we collect your name, your relationship to the celebrant (optional), an optional email address, and your message.",
     ],
   },

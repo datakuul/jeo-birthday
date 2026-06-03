@@ -65,6 +65,45 @@ export const rsvpSubmissionSchema = z.object({
 });
 export type RsvpSubmissionInput = z.infer<typeof rsvpSubmissionSchema>;
 
+// --- Open (self-service) RSVP -------------------------------------------------
+// The responder types their own details and optionally adds the adult guests
+// they are bringing. No invitation code / pre-loaded guest list required.
+export const openGuestSchema = z.object({
+  name: z.string().trim().min(2, "Please enter your guest's name").max(120),
+  mealChoice: z.enum(MEAL_CHOICE).optional(),
+});
+
+export const openRsvpSchema = z
+  .object({
+    rsvpStatus: z.enum(RSVP_STATUS),
+    fullName: z.string().trim().min(2, "Please enter your name").max(120),
+    // Phone is required; email is optional.
+    phone: z.string().trim().min(7, "Please enter your phone number").max(40),
+    email: z
+      .string()
+      .trim()
+      .max(160)
+      .email("Enter a valid email")
+      .optional()
+      .or(z.literal(""))
+      .transform((v) => (v ? v : undefined)),
+    mealChoice: z.enum(MEAL_CHOICE).optional(),
+    allergies: optionalString(280),
+    accessibility: optionalString(280),
+    bringingGuests: z.coerce.boolean().optional(),
+    // Additional guests are always adults.
+    guests: z.array(openGuestSchema).max(12, "That's a lot of guests — please contact the host").optional().default([]),
+    message: optionalString(800),
+    // anti-spam: honeypot field + time the form was rendered (ms epoch)
+    website: z.string().max(0).optional(),
+    renderedAt: z.coerce.number().optional(),
+  })
+  .refine((d) => !(d.bringingGuests && d.rsvpStatus === "ATTENDING") || d.guests.length > 0, {
+    message: "Please add at least one guest, or turn off ‘bringing guests’.",
+    path: ["guests"],
+  });
+export type OpenRsvpInput = z.infer<typeof openRsvpSchema>;
+
 // --- Household ----------------------------------------------------------------
 export const householdSchema = z.object({
   name: z.string().trim().min(2).max(160),

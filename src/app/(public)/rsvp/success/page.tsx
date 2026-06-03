@@ -35,7 +35,7 @@ export default async function RsvpSuccessPage({
           <div className="rule-gold mx-auto mt-6" />
           <p className="mt-6 text-base leading-relaxed text-muted-foreground">
             {attending > 0
-              ? `We're delighted — ${attending} ${attending === 1 ? "guest" : "guests"} attending. A confirmation has been sent to your email.`
+              ? `We're delighted — ${attending} ${attending === 1 ? "guest" : "guests"} attending. If you left an email, a confirmation is on its way.`
               : "Thank you for letting us know. You'll be missed, and we're grateful you responded."}
           </p>
         </Reveal>

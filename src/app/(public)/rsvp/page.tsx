@@ -25,8 +25,8 @@ export default async function RsvpPage() {
           <div className="rule-gold mx-auto mt-6" />
           <p className="mt-6 text-base leading-relaxed text-muted-foreground">
             We would be honoured by your presence on {formatDate(event.startsAt)} at{" "}
-            {event.venueName}, {event.city}. Please find your invitation below and
-            let us know if you can join us.
+            {event.venueName}, {event.city}. Kindly fill in your details below and
+            let us know if you&apos;ll be joining us — and whether you&apos;re bringing anyone.
           </p>
         </Reveal>
 

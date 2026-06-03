@@ -59,7 +59,7 @@ export default async function HomePage() {
             </h1>
 
             <p className="mt-5 max-w-md font-serif text-xl italic leading-snug text-gold-strong sm:text-2xl">
-              Celebrating the life, faith &amp; joy of {honoree.fullName}
+              Celebrating the life, faith &amp; legacy of {honoree.fullName}
               {honoree.honorific ? `, ${honoree.honorific}` : ""}
             </p>
 
@@ -135,7 +135,7 @@ export default async function HomePage() {
           <SectionHeading
             eyebrow="A Life Beautifully Lived"
             title="Moments from Her Journey"
-            intro="From a village in Kogi State to a lifetime of teaching, faith, and family — a few chapters from a remarkable story."
+            intro="From a village in Yagba-West (now part of Kogi State) to a lifetime of teaching, enterprise, faith, and family — a few chapters from a remarkable story."
           />
 
           <div className="mt-12 grid gap-6 sm:grid-cols-3">

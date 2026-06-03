@@ -4,7 +4,6 @@ import {
   storyChapters as storyContent,
   event as eventContent,
   galleryAlbums as galleryContent,
-  featuredTributes,
 } from "@/content/honoree";
 
 /**
@@ -181,25 +180,17 @@ export async function getApprovedTributes() {
       where: { status: "APPROVED" },
       orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
     });
-    if (rows.length) {
-      return rows.map((r) => ({
-        id: r.id,
-        author: r.author,
-        relationship: r.relationship ?? "",
-        message: r.message,
-        isFeatured: r.isFeatured,
-      }));
-    }
+    return rows.map((r) => ({
+      id: r.id,
+      author: r.author,
+      relationship: r.relationship ?? "",
+      message: r.message,
+      isFeatured: r.isFeatured,
+    }));
   } catch {
-    /* fall through */
+    // No mock fallback — show only genuine, approved tributes.
+    return [];
   }
-  return featuredTributes.map((t, i) => ({
-    id: `seed-${i}`,
-    author: t.author,
-    relationship: t.relationship,
-    message: t.message,
-    isFeatured: i === 0,
-  }));
 }
 
 export async function getRsvpStats() {

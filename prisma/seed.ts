@@ -5,51 +5,10 @@ import {
   storyChapters,
   event,
   galleryAlbums,
-  featuredTributes,
 } from "../src/content/honoree";
 
 const prisma = new PrismaClient();
 
-// Deterministic codes for the sample households so the README can document them.
-const SAMPLE_HOUSEHOLDS = [
-  {
-    name: "The Olaniru Family",
-    invitationCode: "JNT-FAM1",
-    primaryContactName: "Olaniru Family",
-    primaryEmail: "family@janetolaniru.com",
-    primaryPhone: "+234 800 000 0001",
-    maxPartySize: 5,
-    guests: [
-      { firstName: "Samuel", lastName: "Olaniru", relationship: "Son", ageGroup: "ADULT" },
-      { firstName: "Esther", lastName: "Olaniru", relationship: "Daughter", ageGroup: "ADULT" },
-      { firstName: "Deborah", lastName: "Olaniru", relationship: "Daughter", ageGroup: "ADULT" },
-      { firstName: "Joshua", lastName: "Olaniru", relationship: "Grandson", ageGroup: "CHILD" },
-    ],
-  },
-  {
-    name: "Pastor & Mrs. Adeyemi",
-    invitationCode: "JNT-CH22",
-    primaryContactName: "Pastor Adeyemi",
-    primaryEmail: "adeyemi@janetolaniru.com",
-    primaryPhone: "+234 800 000 0002",
-    maxPartySize: 2,
-    guests: [
-      { firstName: "Emmanuel", lastName: "Adeyemi", relationship: "Pastor, 1st ECWA", ageGroup: "ADULT" },
-      { firstName: "Grace", lastName: "Adeyemi", relationship: "Church family", ageGroup: "ADULT" },
-    ],
-  },
-  {
-    name: "Chief (Mrs.) Bello",
-    invitationCode: "JNT-OK37",
-    primaryContactName: "Mrs. Bello",
-    primaryEmail: "bello@janetolaniru.com",
-    primaryPhone: "+234 800 000 0003",
-    maxPartySize: 2,
-    guests: [
-      { firstName: "Folake", lastName: "Bello", relationship: "Friend, Oke-Ere", ageGroup: "ADULT" },
-    ],
-  },
-];
 
 async function main() {
   console.log("🌱 Seeding Janet at 80 …");
@@ -171,58 +130,7 @@ async function main() {
   }
   console.log(`  ✓ ${galleryAlbums.length} gallery albums (placeholders)`);
 
-  // ---- Tributes (approved + featured) ---------------------------------------
-  const tributeCount = await prisma.tribute.count();
-  if (tributeCount === 0) {
-    await prisma.tribute.createMany({
-      data: featuredTributes.map((t, i) => ({
-        author: t.author,
-        relationship: t.relationship,
-        message: t.message,
-        status: "APPROVED",
-        isFeatured: i === 0,
-      })),
-    });
-  }
-  console.log(`  ✓ tributes`);
-
-  // ---- Sample households, guests, seating ------------------------------------
-  for (const h of SAMPLE_HOUSEHOLDS) {
-    const household = await prisma.household.upsert({
-      where: { invitationCode: h.invitationCode },
-      update: {
-        name: h.name,
-        primaryContactName: h.primaryContactName,
-        primaryEmail: h.primaryEmail,
-        primaryPhone: h.primaryPhone,
-        maxPartySize: h.maxPartySize,
-      },
-      create: {
-        name: h.name,
-        invitationCode: h.invitationCode,
-        primaryContactName: h.primaryContactName,
-        primaryEmail: h.primaryEmail,
-        primaryPhone: h.primaryPhone,
-        maxPartySize: h.maxPartySize,
-      },
-    });
-    // Reset guests for idempotent re-seed.
-    await prisma.guest.deleteMany({ where: { householdId: household.id } });
-    for (const g of h.guests) {
-      await prisma.guest.create({
-        data: {
-          householdId: household.id,
-          firstName: g.firstName,
-          lastName: g.lastName,
-          relationship: g.relationship,
-          ageGroup: g.ageGroup,
-        },
-      });
-    }
-  }
-  console.log(`  ✓ ${SAMPLE_HOUSEHOLDS.length} sample households`);
-
-  // ---- A couple of seating tables --------------------------------------------
+  // ---- Seating tables (empty templates, ready for assignment) ----------------
   const tableCount = await prisma.table.count();
   if (tableCount === 0) {
     await prisma.table.createMany({
@@ -237,10 +145,10 @@ async function main() {
   console.log("  ✓ seating tables");
 
   console.log("✅ Seed complete.");
-  console.log(
-    `\n  Sample invitation codes: ${SAMPLE_HOUSEHOLDS.map((h) => h.invitationCode).join(", ")}`,
-  );
   console.log(`  Admin login: ${adminEmails[0]} / ${adminPassword}\n`);
+
+  // NOTE: No mock guests or tributes are seeded — real ones come from RSVPs and
+  // the public tribute form. Run `npm run db:seed` any time to refresh content.
 }
 
 main()

@@ -12,7 +12,7 @@ export const honoree = {
   bornOn: "1946-07-26",
   tagline: "Celebrating 80 Years of Grace, Faith & Joy",
   intro:
-    "Educator, mother, entrepreneur, and devoted servant of God. For eight decades, Mrs. Janet E. Olaniru has lived a life marked by hard work, unwavering faith, and quiet generosity — shaping generations of young minds and leaving an indelible mark on her family, her church, and her community.",
+    "Educator, mother, entrepreneur, and devoted servant of God. For eight decades, Mrs. Janet E. Olaniru has lived a life marked by hard work, steadfast faith, and unwavering generosity — shaping generations of young minds and leaving an indelible mark on her family, her church, and her community.",
   // A short epigraph for the hero
   epigraph:
     "Her story is a testament to the power of perseverance, the strength of faith, and the beauty of a life lived in service to others.",
@@ -76,7 +76,7 @@ She retired voluntarily in 2008, but her legacy in education continues to inspir
 
 At the 1st ECWA Church, Oke-Egbe and Oke-Ere, she served faithfully as a Girls' Brigade officer, Women's Choir leader, Financial Secretary, Secretary, and Women Leader. In 2015 she made her pilgrimage to Jerusalem.
 
-At the ECWA DCC level she served as Financial Secretary from 2010 to 2017, displaying exceptional organisational skill and a heart for stewardship — her tenure extended by a further year to guide the newly elected leaders through a smooth transition.`,
+At the ECWA Women Fellowship DCC level she served as Financial Secretary from 2010 to 2017, displaying exceptional organisational skill and a heart for stewardship — her tenure extended by a further year to guide the newly elected leaders through a smooth transition.`,
   },
   {
     slug: "strength-and-grace",
@@ -87,9 +87,11 @@ At the ECWA DCC level she served as Financial Secretary from 2010 to 2017, displ
       "Through every season, she has shown immense strength, grace, and resilience.",
     body: `On the 25th of January, 2011, her beloved husband passed away, leaving behind a legacy of faith and love that continues to resonate with her.
 
-Through it all, Mrs. Olaniru has shown immense strength, grace, and resilience — raising her family while staying true to her values and faith. A passionate entrepreneur, a true disciplinarian, and a woman of substance, she remains, above all, a mother whose love is matched only by her faith.
+Through it all, Mrs. Olaniru has shown immense strength, grace, and resilience — raising her family while staying true to her values and faith.
 
-Today, as a Justice of the Peace and a matriarch, her story reminds us of the profound impact one life can have on the world around it.`,
+She is, in and out, a businesswoman. For decades she ran a thriving shop stocked with foodstuffs and household goods, travelling far and near to source the very best wares to sell. Over the years she has traded in electronic appliances and fine fabrics, and she became one of the pioneers of the plastic-chair and canopy rental business in her locality — an enterprise that has graced countless celebrations, much like this one. Her industry and resilience have made her a true woman of substance.
+
+Today, as a Jerusalem Pilgrim (JP) and a matriarch, her story reminds us of the profound impact one life can have on the world around it.`,
   },
 ];
 

@@ -1,15 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Playfair_Display, Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { honoree } from "@/content/honoree";
 
-const fraunces = Fraunces({
+// Elegant editorial display serif with clean, stable letterforms.
+const playfair = Playfair_Display({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
-  variable: "--font-fraunces",
+  variable: "--font-playfair",
   display: "swap",
 });
 
@@ -53,7 +54,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${inter.variable}`}
+      className={`${playfair.variable} ${inter.variable}`}
       suppressHydrationWarning
     >
       <head>

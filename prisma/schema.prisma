@@ -1,10 +1,9 @@
-// Janet at 80 — data model.
+// Janet at 80 — data model (PostgreSQL / Neon).
 //
-// PORTABILITY NOTE
-// To run locally with zero cloud setup we use SQLite. For production on Vercel,
-// change the datasource `provider` to "postgresql" and point DATABASE_URL at your
-// Postgres instance — the schema is written to be portable (no native enums or
-// scalar lists), so no other changes are required.
+// DATABASE_URL          → Neon POOLED connection (host has "-pooler"); used by
+//                         the app at runtime (serverless-friendly via PgBouncer).
+// DIRECT_DATABASE_URL   → Neon DIRECT connection; used by `prisma db push` /
+//                         migrations, which can't run over the pooler.
 //
 // Enum-like fields are stored as String and validated with Zod (see src/lib/validation).
 
@@ -13,8 +12,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite" // production: change to "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 // ----------------------------------------------------------------------------

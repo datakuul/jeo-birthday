@@ -82,7 +82,8 @@ See [`.env.example`](./.env.example) for the full annotated list.
 
 | Variable | Required | Notes |
 | --- | --- | --- |
-| `DATABASE_URL` | ✅ | SQLite file locally; Postgres URL in production |
+| `DATABASE_URL` | ✅ | Neon **pooled** Postgres URL (host has `-pooler`) |
+| `DIRECT_DATABASE_URL` | ✅ | Neon **direct** Postgres URL (for `prisma db push`/migrations) |
 | `AUTH_SECRET` | ✅ | `npx auth secret` |
 | `AUTH_TRUST_HOST` | ✅ | `true` |
 | `ADMIN_EMAILS` | ✅ | Comma-separated emails allowed into `/admin` |
@@ -97,29 +98,25 @@ See [`.env.example`](./.env.example) for the full annotated list.
 
 ## ☁️ Deploying to Vercel
 
-1. **Switch the database to Postgres.** In `prisma/schema.prisma` change the datasource provider:
-   ```prisma
-   datasource db {
-     provider = "postgresql"   // was "sqlite"
-     url      = env("DATABASE_URL")
-   }
-   ```
-   The schema is written to be portable (no native enums or scalar arrays), so no other changes are needed.
+The datasource is already PostgreSQL (`prisma/schema.prisma`), using a pooled
+`DATABASE_URL` at runtime and `DIRECT_DATABASE_URL` for migrations.
 
-2. **Create a Postgres database** (Vercel → Storage → Postgres, or Neon). Copy its connection string.
+1. **Create a Neon database.** From the Neon dashboard copy **two** connection strings:
+   - the **pooled** string (host contains `-pooler`) → `DATABASE_URL`
+   - the **direct** string → `DIRECT_DATABASE_URL`
 
-3. **Push to GitHub and import the repo into Vercel.**
+2. **Set Environment Variables** in the Vercel project (Production + Preview): both
+   Neon URLs plus all the other variables above. Add **Vercel Blob** storage to
+   auto-provision `BLOB_READ_WRITE_TOKEN`.
 
-4. **Set Environment Variables** in the Vercel project (Production + Preview): all the variables above. Add **Vercel Blob** storage to auto-provision `BLOB_READ_WRITE_TOKEN`.
-
-5. **Initialise the production database** (once), from your machine with the production `DATABASE_URL`:
+3. **Initialise the database** (once), from your machine with both Neon URLs in `.env`:
    ```bash
-   DATABASE_URL="<prod-postgres-url>" npx prisma db push
-   DATABASE_URL="<prod-postgres-url>" ADMIN_EMAILS="..." ADMIN_PASSWORD="..." npm run db:seed
+   npx prisma db push      # creates the tables (uses DIRECT_DATABASE_URL)
+   npm run db:seed         # honoree, event, story, gallery, tributes, admin user
    ```
-   (Or run these as a one-off in a Vercel deployment shell.)
 
-6. **Deploy.** Vercel runs `npm run build` automatically. Analytics & Speed Insights light up once deployed.
+4. **Deploy.** Push to GitHub (Vercel auto-builds) — `npm run build` runs `prisma
+   generate` automatically. Analytics & Speed Insights light up once deployed.
 
 ### ✅ Deployment checklist
 - [ ] Prisma datasource set to `postgresql`

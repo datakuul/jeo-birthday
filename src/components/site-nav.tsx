@@ -12,6 +12,7 @@ const links = [
   { href: "/gallery", label: "Gallery" },
   { href: "/tributes", label: "Tributes" },
   { href: "/event", label: "The Celebration" },
+  { href: "/programme", label: "Programme" },
 ];
 
 export function SiteNav() {
@@ -51,7 +52,7 @@ export function SiteNav() {
           </span>
         </Link>
 
-        <div className="hidden items-center gap-8 md:flex">
+        <div className="hidden items-center gap-6 md:flex lg:gap-8">
           {links.map((l) => (
             <Link
               key={l.href}

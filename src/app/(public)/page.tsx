@@ -238,7 +238,7 @@ export default async function HomePage() {
                 <div>
                   <dt className="font-medium">{formatDate(eventDate)}</dt>
                   <dd className="text-sm text-muted-foreground">
-                    12 noon (West Africa Time)
+                    1:00 pm (West Africa Time)
                   </dd>
                 </div>
               </div>

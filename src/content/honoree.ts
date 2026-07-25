@@ -100,8 +100,8 @@ export const event = {
   venueName: "Pavilion Hall, Crystal Events Centre",
   addressLine: "New Garage Road, opposite Bentos Pharmaceutical",
   city: "Ibadan, Nigeria",
-  // Saturday, 25 July 2026, 12 noon (WAT)
-  startsAt: "2026-07-25T12:00:00+01:00",
+  // Saturday, 25 July 2026, 1:00 pm (WAT)
+  startsAt: "2026-07-25T13:00:00+01:00",
   dressCode:
     "There is an Aso-Ebi (uniform attire): lace & gele for the women, and matching fabric with fila for the men. Kindly indicate in your RSVP if you would like to join the Aso-Ebi. Otherwise, please come beautifully dressed in white & gold.",
   parking: "Complimentary parking is available within the Crystal Events Centre grounds.",

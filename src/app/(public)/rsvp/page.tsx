@@ -70,7 +70,7 @@ export default async function RsvpPage() {
             {/* Key facts */}
             <dl className="mx-auto grid max-w-xl gap-5 text-left sm:grid-cols-3 sm:text-center">
               <Fact Icon={CalendarHeart} label="Date" value={formatDate(date, { weekday: "long", day: "numeric", month: "long", year: "numeric" })} />
-              <Fact Icon={Clock} label="Time" value="12 noon (WAT)" />
+              <Fact Icon={Clock} label="Time" value="1:00 pm (WAT)" />
               <Fact Icon={MapPin} label="Venue" value={`${event.venueName} · ${event.city}`} />
             </dl>
 

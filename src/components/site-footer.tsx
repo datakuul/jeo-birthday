@@ -31,6 +31,7 @@ export function SiteFooter() {
                 { href: "/gallery", label: "Gallery" },
                 { href: "/tributes", label: "Tributes" },
                 { href: "/event", label: "The Celebration" },
+                { href: "/programme", label: "Programme" },
                 { href: "/rsvp", label: "RSVP" },
                 { href: "/privacy", label: "Privacy Notice" },
               ].map((l) => (

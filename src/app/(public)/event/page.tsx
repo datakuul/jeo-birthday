@@ -55,7 +55,7 @@ export default async function EventPage() {
           <Card className="overflow-hidden">
             <div className="grid sm:grid-cols-2">
               <Fact Icon={CalendarHeart} label="Date" value={formatDate(date)} />
-              <Fact Icon={Clock} label="Time" value="12 noon (WAT)" />
+              <Fact Icon={Clock} label="Time" value="1:00 pm (WAT)" />
               <Fact Icon={MapPin} label="Venue" value={event.venueName} />
               <Fact
                 Icon={MapPin}
